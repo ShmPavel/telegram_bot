@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: bot
       POSTGRES_PASSWORD: botpass1234
       POSTGRES_DB: botdb
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -16,6 +14,33 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    # Порт наружу НЕ открываем
+
+  bot:
+    build: .
+    container_name: tg_notes_bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: tg_notes_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - bot
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:
